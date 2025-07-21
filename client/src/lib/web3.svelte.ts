@@ -1,3 +1,4 @@
+import { PropertyService } from './services/propertyService.js';
 import { WalletService } from './web3.svelte.js';
 
 // Re-exports for easy importing
@@ -9,3 +10,6 @@ export { CONTRACT_ADDRESS, CONTRACT_ABI, NETWORKS } from './utils/constants.js';
 export const connectWallet = () => WalletService.connect();
 export const disconnectWallet = () => WalletService.disconnect();
 export const checkWalletConnection = () => WalletService.checkConnection();
+
+export const createProperty = (formData: any) => PropertyService.createProperty(formData);
+export const getAllProperties = () => PropertyService.getAllProperties();
