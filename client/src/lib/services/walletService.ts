@@ -136,4 +136,120 @@ export class WalletService {
 		const provider = await this.getProvider();
 		return await provider.getSigner();
 	}
+
+	// === GET USER PROPERTIES ===
+	static async getUserProperties(userAddress?: string) {
+		try {
+			const address = userAddress || walletState.address;
+			if (!address) throw new Error('No address provided');
+
+			console.log('👤 Fetching properties for user:', address);
+
+			// Get contract with signer
+			const signer = await WalletService.getSigner();
+			const contract = new ethers.Contract(CONTRACT_ADDRESS, CONTRACT_ABI, signer);
+
+			const result = await contract.getUserProperties(address);
+			console.log('📊 Raw user properties data:', result);
+
+			// Format user properties (same structure as getAllProperties)
+			const formattedProperties = result.map((property, index) => ({
+				owner: property[1] || property.owner || address, // address owner
+				title: property[3] || property.propertyTitle || 'Untitled Property', // string propertyTitle
+				description: property[7] || property.description || '', // string description
+				category: property[4] || property.category || 'General', // string category
+				price: property[2] ? ethers.formatEther(property[2]) : '0', // uint256 price
+				productId: property[0] ? Number(property[0]) : index, // uint256 productId
+				reviewers: property[8] || property.reviewers || [], // address[] reviewers
+				reviews: property[9] || property.reviews || [], // string[] reviews
+				image: property[5] || property.images || '', // string images
+				address: property[6] || property.propertyAddress || '', // string propertyAddress
+				id: property[0]?.toString() || index.toString(),
+				shortOwner: address ? `${address.slice(0, 6)}...${address.slice(-4)}` : 'Unknown',
+
+				// Additional user property specific fields
+				isOwned: true, // Always true for user properties
+				reviewCount: property[9]?.length || 0,
+				averageRating: 0 // Will calculate below if needed
+			}));
+
+			// Get reviews for each property to calculate average ratings
+			const propertiesWithReviews = await Promise.all(
+				formattedProperties.map(async (property) => {
+					try {
+						const reviewsData = await this.getPropertyReviews(property.productId);
+						return {
+							...property,
+							averageRating: reviewsData.averageRating,
+							totalReviews: reviewsData.totalReviews,
+							reviewsData: reviewsData.reviews
+						};
+					} catch (reviewError) {
+						console.warn(
+							`Failed to fetch reviews for property ${property.productId}:`,
+							reviewError
+						);
+						return {
+							...property,
+							averageRating: 0,
+							totalReviews: 0,
+							reviewsData: []
+						};
+					}
+				})
+			);
+
+			console.log(`✅ Fetched ${formattedProperties.length} properties for user ${address}`);
+
+			// Calculate user statistics
+			const totalValue = propertiesWithReviews.reduce(
+				(sum, prop) => sum + parseFloat(prop.price),
+				0
+			);
+
+			const totalReviews = propertiesWithReviews.reduce((sum, prop) => sum + prop.totalReviews, 0);
+
+			const averagePropertyRating =
+				propertiesWithReviews.length > 0
+					? propertiesWithReviews.reduce((sum, prop) => sum + prop.averageRating, 0) /
+						propertiesWithReviews.length
+					: 0;
+
+			return {
+				properties: propertiesWithReviews,
+				userStats: {
+					totalProperties: formattedProperties.length,
+					totalValue: totalValue.toFixed(4) + ' ETH',
+					totalValueUSD: (totalValue * 2000).toFixed(2) + ' USD',
+					totalReviews: totalReviews,
+					averageRating: averagePropertyRating.toFixed(1),
+					userAddress: address,
+					shortAddress: `${address.slice(0, 6)}...${address.slice(-4)}`
+				},
+				success: true
+			};
+		} catch (error) {
+			console.error('❌ Failed to fetch user properties:', error);
+			throw error;
+		}
+	}
+
+	// === GET CURRENT USER PROPERTIES (shorthand) ===
+	static async getMyProperties() {
+		if (!walletState.address) {
+			throw new Error('Wallet not connected');
+		}
+		return this.getUserProperties(walletState.address);
+	}
+
+	// === USER PROPERTY STATISTICS ===
+	static async getUserStats(userAddress?: string) {
+		try {
+			const userPropertiesData = await this.getUserProperties(userAddress);
+			return userPropertiesData.userStats;
+		} catch (error) {
+			console.error('❌ Failed to fetch user stats:', error);
+			throw error;
+		}
+	}
 }

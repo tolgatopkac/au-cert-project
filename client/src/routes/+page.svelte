@@ -1,5 +1,6 @@
 <script>
 	import Wallet from '$lib/components/Wallet.svelte';
+	import { PropertyService } from '$lib/services/propertyService';
 	import { propertyState } from '$lib/stores/propertyStore.svelte';
 	import { checkWalletConnection, connectWallet, createProperty, disconnectWallet, getAllProperties, shortAddress, walletState} from '$lib/web3.svelte';
 	import { onMount } from 'svelte';
@@ -75,7 +76,16 @@
 		} else {
 			stopAutoRefresh();
 		}
+
+
 	});
+
+
+	onMount(async () => {
+		const events = await PropertyService.getContractEvents('PropertyListed');
+		console.log('🔄 Events:', events);
+	})
+
 </script>
 
 <svelte:head>
