@@ -1157,34 +1157,55 @@ export class PropertyService {
 				}
 			}
 
-			// Get events
-			const filter = eventName
-				? contract.filters[eventName]() // Specific event
-				: contract.filters['*'](); // All events
-
-			const events = await contract.queryFilter(filter, fromBlock, toBlock);
+			// Get events - DÜZELTME
+			let events;
+			if (eventName) {
+				// Specific event
+				const filter = contract.filters[eventName]();
+				events = await contract.queryFilter(filter, fromBlock, toBlock);
+			} else {
+				// All events - filter olmadan
+				events = await contract.queryFilter({}, fromBlock, toBlock);
+			}
 
 			// Format events
 			const formattedEvents = events.map((event, index) => {
-				const parsedLog = contract.interface.parseLog(event);
+				try {
+					const parsedLog = contract.interface.parseLog(event);
 
-				return {
-					eventName: parsedLog.name,
-					transactionHash: event.transactionHash,
-					blockNumber: event.blockNumber,
-					blockHash: event.blockHash,
-					transactionIndex: event.transactionIndex,
-					logIndex: event.logIndex,
-					args: parsedLog.args,
-					data: Object.fromEntries(
-						parsedLog.fragment.inputs.map((input, i) => [
-							input.name,
-							parsedLog.args[i]?.toString() || parsedLog.args[i]
-						])
-					),
-					timestamp: null, // Will be filled if needed
-					explorerUrl: `https://sepolia.etherscan.io/tx/${event.transactionHash}`
-				};
+					return {
+						eventName: parsedLog.name,
+						transactionHash: event.transactionHash,
+						blockNumber: event.blockNumber,
+						blockHash: event.blockHash,
+						transactionIndex: event.transactionIndex,
+						logIndex: event.logIndex,
+						args: parsedLog.args,
+						data: Object.fromEntries(
+							parsedLog.fragment.inputs.map((input, i) => [
+								input.name,
+								parsedLog.args[i]?.toString() || parsedLog.args[i]
+							])
+						),
+						timestamp: null, // Will be filled if needed
+						explorerUrl: `https://sepolia.etherscan.io/tx/${event.transactionHash}`
+					};
+				} catch (parseError) {
+					// Eğer log parse edilemezse, raw log'u döndür
+					console.warn('Could not parse log:', event, parseError);
+					return {
+						eventName: 'UnknownEvent',
+						transactionHash: event.transactionHash,
+						blockNumber: event.blockNumber,
+						blockHash: event.blockHash,
+						transactionIndex: event.transactionIndex,
+						logIndex: event.logIndex,
+						args: [],
+						data: {},
+						timestamp: null,
+						explorerUrl: `https://sepolia.etherscan.io/tx/${event.transactionHash}`
+					};
+				}
 			});
 
 			console.log(`✅ Fetched ${formattedEvents.length} events:`, formattedEvents);
@@ -1305,6 +1326,40 @@ export class PropertyService {
 			};
 		} catch (error) {
 			console.error('❌ Failed to fetch recent events:', error);
+			throw error;
+		}
+	}
+
+	// === GET TOTAL REVIEWS COUNT ===
+	static async getTotalReviews() {
+		try {
+			console.log('📊 Fetching total reviews count...');
+
+			// Get contract (read-only or with signer)
+			let contract;
+			if (walletState.isConnected) {
+				const signer = await WalletService.getSigner();
+				contract = new ethers.Contract(CONTRACT_ADDRESS, CONTRACT_ABI, signer);
+			} else {
+				if (typeof window.ethereum !== 'undefined') {
+					const provider = new ethers.BrowserProvider(window.ethereum);
+					contract = new ethers.Contract(CONTRACT_ADDRESS, CONTRACT_ABI, provider);
+				} else {
+					throw new Error('No provider available');
+				}
+			}
+
+			const totalReviews = await contract.getTotalReviews();
+			const count = Number(totalReviews);
+
+			console.log('✅ Total reviews count:', count);
+
+			return {
+				totalReviews: count,
+				success: true
+			};
+		} catch (error) {
+			console.error('❌ Failed to fetch total reviews count:', error);
 			throw error;
 		}
 	}

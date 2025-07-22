@@ -3,6 +3,10 @@
 	import '../app.css';
 
 	let { children } = $props();
+
+	$effect(() => {
+		console.log('🚀 Layout mounted');
+	});
 </script>
 
 <Header />
