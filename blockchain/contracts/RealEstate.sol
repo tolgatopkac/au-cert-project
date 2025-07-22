@@ -322,4 +322,9 @@ contract MyContract {
 
         return highestRatedProductId;
     }
+
+    // Get total reviews count
+    function getTotalReviews() external view returns (uint256) {
+        return reviewsCounter;
+    }
 }
