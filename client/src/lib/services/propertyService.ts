@@ -67,7 +67,7 @@ export class PropertyService {
 		propertyTitle: string;
 		description: string;
 		category: string;
-		price: string;
+		price: string | number;
 		images?: string;
 		propertyAddress: string;
 	}) {
@@ -98,7 +98,11 @@ export class PropertyService {
 			if (!formData.propertyAddress?.trim()) {
 				throw new Error('Property address is required');
 			}
-			if (!formData.price?.trim() || parseFloat(formData.price) <= 0) {
+			// ✅ Price validation - number veya string
+			const priceValue =
+				typeof formData.price === 'string' ? parseFloat(formData.price.trim()) : formData.price;
+
+			if (!priceValue || priceValue <= 0) {
 				throw new Error('Valid price is required');
 			}
 

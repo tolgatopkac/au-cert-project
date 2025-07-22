@@ -13,6 +13,7 @@
 
 	$effect(() => {
 		console.log('🚀 Loading data...');
+		console.log('👛 Wallet connected:', walletState);
 		homePageStateLoad();
 
 		// Wallet connection durumu değişirse yeniden yükle

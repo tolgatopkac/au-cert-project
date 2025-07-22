@@ -26,127 +26,6 @@
 	import { homePageState } from './HomeState.svelte';
 	import { formatEthDisplay } from '$lib/utils/formatters';
 
-	// Mock data for development
-	const mockProperties = [
-		{
-			id: '1',
-			productId: 1,
-			title: 'Modern Downtown Apartment',
-			description:
-				'Luxurious 2-bedroom apartment in the heart of the city with stunning skyline views and modern amenities.',
-			price: '2.5',
-			address: 'Manhattan, New York',
-			category: 'Apartment',
-			image: 'https://images.unsplash.com/photo-1545324418-cc1a3fa10c00?w=400',
-			owner: '0x1234567890123456789012345678901234567890',
-			shortOwner: '0x1234...7890',
-			reviews: []
-		},
-		{
-			id: '2',
-			productId: 2,
-			title: 'Cozy Suburban House',
-			description:
-				'Beautiful 3-bedroom family home with garden, garage, and quiet neighborhood location.',
-			price: '4.2',
-			address: 'Beverly Hills, CA',
-			category: 'House',
-			image: 'https://images.unsplash.com/photo-1570129477492-45c003edd2be?w=400',
-			owner: '0x2345678901234567890123456789012345678901',
-			shortOwner: '0x2345...8901',
-			reviews: []
-		},
-		{
-			id: '3',
-			productId: 3,
-			title: 'Luxury Penthouse Suite',
-			description:
-				'Exclusive penthouse with panoramic city views, private terrace, and premium finishes.',
-			price: '8.9',
-			address: 'Miami Beach, FL',
-			category: 'Penthouse',
-			image: 'https://images.unsplash.com/photo-1613490493576-7fde63acd811?w=400',
-			owner: '0x3456789012345678901234567890123456789012',
-			shortOwner: '0x3456...9012',
-			reviews: []
-		},
-		{
-			id: '4',
-			productId: 4,
-			title: 'Beachfront Villa',
-			description:
-				'Stunning oceanfront property with private beach access, pool, and tropical landscaping.',
-			price: '12.7',
-			address: 'Malibu, CA',
-			category: 'Villa',
-			image: 'https://images.unsplash.com/photo-1512917774080-9991f1c4c750?w=400',
-			owner: '0x4567890123456789012345678901234567890123',
-			shortOwner: '0x4567...0123',
-			reviews: []
-		},
-		{
-			id: '5',
-			productId: 5,
-			title: 'Urban Loft Space',
-			description:
-				'Industrial-style loft with exposed brick, high ceilings, and artist studio potential.',
-			price: '1.8',
-			address: 'Brooklyn, NY',
-			category: 'Loft',
-			image: 'https://images.unsplash.com/photo-1502672260266-1c1ef2d93688?w=400',
-			owner: '0x5678901234567890123456789012345678901234',
-			shortOwner: '0x5678...1234',
-			reviews: []
-		},
-		{
-			id: '6',
-			productId: 6,
-			title: 'Mountain Cabin Retreat',
-			description:
-				'Rustic log cabin surrounded by nature, perfect for weekend getaways and outdoor enthusiasts.',
-			price: '0.9',
-			address: 'Aspen, CO',
-			category: 'Cabin',
-			image: 'https://images.unsplash.com/photo-1449824913935-59a10b8d2000?w=400',
-			owner: '0x6789012345678901234567890123456789012345',
-			shortOwner: '0x6789...2345',
-			reviews: []
-		}
-	];
-
-	const mockStats = {
-		totalProperties: 156,
-		totalVolume: 347.8,
-		activeUsers: 1240,
-		recentActivities: 23
-	};
-
-	const mockRecentActivities = [
-		{
-			id: 1,
-			type: 'PropertyListed',
-			title: 'New Property Listed',
-			description: 'Modern Downtown Apartment was listed for 2.5 ETH',
-			timestamp: '2 hours ago',
-			icon: FileText
-		},
-		{
-			id: 2,
-			type: 'PropertySold',
-			title: 'Property Sold',
-			description: 'Beachfront Villa sold for 12.7 ETH',
-			timestamp: '5 hours ago',
-			icon: DollarSign
-		},
-		{
-			id: 3,
-			type: 'ReviewAdded',
-			title: 'New Review',
-			description: 'Urban Loft Space received a 5-star review',
-			timestamp: '1 day ago',
-			icon: Star
-		}
-	];
 
 	const {
 		handleConnectWallet
@@ -492,8 +371,7 @@
 					<div class="flex items-center justify-between rounded-xl bg-slate-50 p-6">
 						<div class="flex items-center space-x-4">
 							<div class="flex h-12 w-12 items-center justify-center rounded-xl bg-emerald-100">
-						
-							<FileText class="h-6 w-6 text-emerald-600" />
+								<FileText class="h-6 w-6 text-emerald-600" />
 							</div>
 							<div>
 								<h3 class="font-semibold text-slate-800">
