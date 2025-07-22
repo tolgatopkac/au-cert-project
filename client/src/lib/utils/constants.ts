@@ -31,3 +31,11 @@ export const NETWORKS = {
 };
 
 export const SUPPORTED_NETWORKS = [NETWORKS.SEPOLIA];
+
+/* const TRANSACTION_STEPS = {
+	PREPARING: 'Preparing transaction...',
+	PENDING: 'Transaction submitted to blockchain...',
+	CONFIRMING: 'Waiting for confirmation...',
+	SUCCESS: 'Property listed successfully!'
+};
+ */
