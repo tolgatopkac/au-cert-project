@@ -4,13 +4,15 @@
 	import MetaMaskWarning from '$lib/components/MetaMaskWarning.svelte';
 	import { homePageStateLoad } from '$lib/views/Home/HomeState.svelte';
 	import { walletState, connectWallet } from '$lib/web3.svelte.js';
+	import { browser } from '$app/environment'; // ✅ Import browser check
 
-	
 	let helpWidgetOpen = $state(false);
 	let helpButton: HTMLButtonElement | null = $state(null);
 
-
+	// ✅ Only run effects in browser
 	$effect(() => {
+		if (!browser) return; // ✅ Stop execution on server
+		
 		console.log('🚀 Loading data...');
 		
 		// Safe data loading with error handling
@@ -29,51 +31,55 @@
 	});
 
 	async function addSepoliaNetwork() {
-		if (typeof window !== 'undefined' && window.ethereum) {
-			try {
-				// First try to switch to Sepolia (if it already exists)
-				await window.ethereum.request({
-					method: 'wallet_switchEthereumChain',
-					params: [{ chainId: '0xAA36A7' }] // 11155111 in hex
-				});
-				
-				console.log('✅ Switched to Sepolia network');
-				
-			} catch (switchError: any) {
-				// If network doesn't exist (error code 4902), then add it
-				if (switchError.code === 4902) {
-					try {
-						await window.ethereum.request({
-							method: 'wallet_addEthereumChain',
-							params: [{
-								chainId: '0xAA36A7',
-								chainName: 'Sepolia Test Network',
-								nativeCurrency: {
-									name: 'Ethereum',
-									symbol: 'ETH',
-									decimals: 18
-								},
-								rpcUrls: ['https://sepolia.infura.io/v3/'],
-								blockExplorerUrls: ['https://sepolia.etherscan.io/']
-							}]
-						});
-						
-						console.log('✅ Added and switched to Sepolia network');
-						
-					} catch (addError) {
-						console.error('❌ Failed to add Sepolia network:', addError);
-						alert('Failed to add Sepolia network. Please add it manually.');
-					}
-				} else {
-					console.error('❌ Failed to switch to Sepolia:', switchError);
-					alert('Failed to switch to Sepolia network.');
-				}
-			}
-		} else {
+		if (!browser || typeof window === 'undefined' || !window.ethereum) { // ✅ Browser check
 			alert('MetaMask is not installed. Please install MetaMask first!');
+			return;
+		}
+
+		try {
+			// First try to switch to Sepolia (if it already exists)
+			await window.ethereum.request({
+				method: 'wallet_switchEthereumChain',
+				params: [{ chainId: '0xAA36A7' }] // 11155111 in hex
+			});
+			
+			console.log('✅ Switched to Sepolia network');
+			
+		} catch (switchError: any) {
+			// If network doesn't exist (error code 4902), then add it
+			if (switchError.code === 4902) {
+				try {
+					await window.ethereum.request({
+						method: 'wallet_addEthereumChain',
+						params: [{
+							chainId: '0xAA36A7',
+							chainName: 'Sepolia Test Network',
+							nativeCurrency: {
+								name: 'Ethereum',
+								symbol: 'ETH',
+								decimals: 18
+							},
+							rpcUrls: ['https://sepolia.infura.io/v3/'],
+							blockExplorerUrls: ['https://sepolia.etherscan.io/']
+						}]
+					});
+					
+					console.log('✅ Added and switched to Sepolia network');
+					
+				} catch (addError) {
+					console.error('❌ Failed to add Sepolia network:', addError);
+					alert('Failed to add Sepolia network. Please add it manually.');
+				}
+			} else {
+				console.error('❌ Failed to switch to Sepolia:', switchError);
+				alert('Failed to switch to Sepolia network.');
+			}
 		}
 	}
+
 	function scrollToGuide() {
+		if (!browser) return; // ✅ Browser check
+		
 		const footer = document.querySelector('[data-guide]');
 		if (footer) {
 			footer.scrollIntoView({ 
@@ -89,11 +95,15 @@
 	}
 
 	async function handleConnectWallet() {
-		await connectWallet();
-		helpWidgetOpen = false; // Close widget after connecting
+		if (!browser) return; // ✅ Browser check
+		
+		try {
+			await connectWallet();
+			helpWidgetOpen = false;
+		} catch (error) {
+			console.error('Wallet connection failed:', error);
+		}
 	}
-
-
 </script>
 
 <svelte:head>
@@ -101,72 +111,80 @@
 	<meta name="description" content="Buy, sell, and review properties on the blockchain with PropChain - the future of real estate." />
 </svelte:head>
 
-<MetaMaskWarning />
+<!-- ✅ Only render MetaMaskWarning in browser -->
+{#if browser}
+	<MetaMaskWarning />
+{/if}
 
 <div class="{helpWidgetOpen ? 'pb-96' : ''}">
-	<Home />
+	<Home {handleConnectWallet} />
 </div>
 
-<div class="fixed bottom-6 right-6 z-40">
-	<div class="relative">
-		<!-- Floating Button -->
-		<button 
-			bind:this={helpButton}
-			onclick={toggleHelpWidget}
-			class="bg-gradient-to-r from-emerald-500 to-teal-600 hover:from-emerald-600 hover:to-teal-700 text-white p-4 rounded-full shadow-2xl transition-all duration-300 hover:scale-110 group"
-		>
-			<svg class="w-6 h-6 transition-transform group-hover:rotate-12" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-				<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8.228 9c.549-1.165 2.03-2 3.772-2 2.21 0 4 1.343 4 3 0 1.4-1.278 2.575-3.006 2.907-.542.104-.994.54-.994 1.093m0 3h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
-			</svg>
+<!-- ✅ Only render interactive widgets in browser -->
+{#if browser}
+	<div class="fixed bottom-6 right-6 z-40">
+		<div class="relative">
+			<!-- Floating Button -->
+			<button 
+				bind:this={helpButton}
+				onclick={toggleHelpWidget}
+				class="bg-gradient-to-r from-emerald-500 to-teal-600 hover:from-emerald-600 hover:to-teal-700 text-white p-4 rounded-full shadow-2xl transition-all duration-300 hover:scale-110 group"
+			>
+				<svg class="w-6 h-6 transition-transform group-hover:rotate-12" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+					<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8.228 9c.549-1.165 2.03-2 3.772-2 2.21 0 4 1.343 4 3 0 1.4-1.278 2.575-3.006 2.907-.542.104-.994.54-.994 1.093m0 3h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+				</svg>
+				
+				<!-- Pulse Effect -->
+				<div class="absolute inset-0 bg-emerald-400 rounded-full animate-ping opacity-20"></div>
+			</button>
 			
-			<!-- Pulse Effect -->
-			<div class="absolute inset-0 bg-emerald-400 rounded-full animate-ping opacity-20"></div>
-		</button>
-		
-		<!-- ✅ Reactive Widget - Shows/hides based on state -->
-		{#if helpWidgetOpen}
-			<div class="absolute bottom-16 right-0 bg-white rounded-xl shadow-2xl border border-slate-200 p-4 w-80 animate-in slide-in-from-bottom-2 duration-200">
-				<div class="flex items-center justify-between mb-3">
-					<h4 class="font-bold text-slate-800">🚀 New to PropChain?</h4>
-					<button 
-						onclick={() => helpWidgetOpen = false}
-						class="text-slate-400 hover:text-slate-600 transition-colors"
-					>
-						<svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-							<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
-						</svg>
-					</button>
+			<!-- ✅ Reactive Widget - Shows/hides based on state -->
+			{#if helpWidgetOpen}
+				<div class="absolute bottom-16 right-0 bg-white rounded-xl shadow-2xl border border-slate-200 p-4 w-80 animate-in slide-in-from-bottom-2 duration-200">
+					<div class="flex items-center justify-between mb-3">
+						<h4 class="font-bold text-slate-800">🚀 New to PropChain?</h4>
+						<button 
+							onclick={() => helpWidgetOpen = false}
+							class="text-slate-400 hover:text-slate-600 transition-colors"
+						>
+							<svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+								<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+							</svg>
+						</button>
+					</div>
+					
+					<p class="text-sm text-slate-600 mb-4">Follow our 3-step guide to get started!</p>
+					
+					<div class="space-y-2">
+						<button 
+							onclick={scrollToGuide}
+							class="w-full text-left p-3 rounded-lg hover:bg-slate-50 text-sm transition-colors flex items-center space-x-3"
+						>
+							<span class="text-lg">📱</span>
+							<span>View Getting Started Guide</span>
+						</button>
+						<button 
+							onclick={handleConnectWallet}
+							class="w-full text-left p-3 rounded-lg hover:bg-emerald-50 text-sm transition-colors flex items-center space-x-3"
+						>
+							<span class="text-lg">🔗</span>
+							<span>Connect Wallet Now</span>
+						</button>
+						<button 
+							onclick={addSepoliaNetwork}
+							class="w-full text-left p-3 rounded-lg hover:bg-blue-50 text-sm transition-colors flex items-center space-x-3"
+						>
+							<span class="text-lg">🌐</span>
+							<span>Add Sepolia Network</span>
+						</button>
+					</div>
 				</div>
-				
-				<p class="text-sm text-slate-600 mb-4">Follow our 3-step guide to get started!</p>
-				
-				<div class="space-y-2">
-					<button 
-						onclick={scrollToGuide}
-						class="w-full text-left p-3 rounded-lg hover:bg-slate-50 text-sm transition-colors flex items-center space-x-3"
-					>
-						<span class="text-lg">📱</span>
-						<span>View Getting Started Guide</span>
-					</button>
-					<button 
-						onclick={handleConnectWallet}
-						class="w-full text-left p-3 rounded-lg hover:bg-emerald-50 text-sm transition-colors flex items-center space-x-3"
-					>
-						<span class="text-lg">🔗</span>
-						<span>Connect Wallet Now</span>
-					</button>
-					<button 
-						onclick={addSepoliaNetwork}
-						class="w-full text-left p-3 rounded-lg hover:bg-blue-50 text-sm transition-colors flex items-center space-x-3"
-					>
-						<span class="text-lg">🌐</span>
-						<span>Add Sepolia Network</span>
-					</button>
-				</div>
-			</div>
-		{/if}
+			{/if}
+		</div>
 	</div>
-</div>
+{/if}
+
+<!-- Footer always renders (no browser APIs used) -->
 <div class="bg-slate-50 border-t border-slate-200" data-guide>
 	<div class="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 py-8">
 		
