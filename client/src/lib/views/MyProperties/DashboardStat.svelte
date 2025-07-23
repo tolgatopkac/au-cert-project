@@ -55,7 +55,7 @@
     </div>
 
     <!-- Recent Activity -->
-    <div class="rounded-2xl bg-white p-6 shadow-lg transition-shadow hover:shadow-xl">
+  <!--   <div class="rounded-2xl bg-white p-6 shadow-lg transition-shadow hover:shadow-xl">
         <div class="flex items-center justify-between">
             <div>
                 <p class="text-sm font-medium text-slate-600">Recent Activity</p>
@@ -65,5 +65,5 @@
                 <Activity class="h-6 w-6 text-orange-600" />
             </div>
         </div>
-    </div>
+    </div> -->
 </div>

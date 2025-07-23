@@ -25,7 +25,7 @@
 	} from '@lucide/svelte';
 	import { homePageState } from './HomeState.svelte';
 	import { formatEthDisplay } from '$lib/utils/formatters';
-
+	import { walletState } from '$lib/web3.svelte';
 
 	const {
 		handleConnectWallet
@@ -65,14 +65,23 @@
 						<Search class="h-5 w-5" />
 						<span>Explore Properties</span>
 					</a>
-
-					<button
-						onclick={handleConnectWallet}
-						class="inline-flex items-center space-x-2 rounded-xl bg-gradient-to-r from-emerald-600 to-teal-600 px-8 py-4 font-semibold text-white shadow-lg transition-all duration-200 hover:from-emerald-700 hover:to-teal-700 hover:shadow-xl"
-					>
-						<Plus class="h-5 w-5" />
-						<span>List Property</span>
-					</button>
+					{#if !walletState.isConnected}
+						<button
+							onclick={handleConnectWallet}
+							class="inline-flex items-center space-x-2 rounded-xl bg-gradient-to-r from-emerald-600 to-teal-600 px-8 py-4 font-semibold text-white shadow-lg transition-all duration-200 hover:from-emerald-700 hover:to-teal-700 hover:shadow-xl"
+						>
+							<Plus class="h-5 w-5" />
+							<span>List Property</span>
+						</button>
+					{:else}
+						<a
+							href="/create"
+							class="inline-flex items-center space-x-2 rounded-xl bg-gradient-to-r from-emerald-600 to-teal-600 px-8 py-4 font-semibold text-white shadow-lg transition-all duration-200 hover:from-emerald-700 hover:to-teal-700 hover:shadow-xl"
+						>
+							<Plus class="h-5 w-5" />
+							<span>List Property</span>
+						</a>
+					{/if}
 				</div>
 			</div>
 		</div>
@@ -81,7 +90,7 @@
 	<!-- 2. STATS SECTION -->
 	<section class="bg-white py-16">
 		<div class="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
-			<div class="grid grid-cols-2 gap-8 lg:grid-cols-4">
+			<div class="grid grid-cols-2 gap-8 lg:grid-cols-3">
 				<!-- Total Properties -->
 				<div class="text-center">
 					<div
@@ -122,18 +131,17 @@
 				</div>
 
 				<!-- Recent Activities -->
-				<div class="text-center">
+				<!-- 		<div class="text-center">
 					<div
 						class="mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-2xl bg-gradient-to-br from-emerald-500 to-teal-600"
 					>
 						<TrendingUp class="h-8 w-8 text-white" />
 					</div>
 					<div class="mb-2 text-3xl font-bold text-slate-800">
-						<!-- TODO: Add recent activities -->
 						{homePageState.recentActivities.length}
 					</div>
 					<div class="text-slate-600">Recent Activities</div>
-				</div>
+				</div> -->
 			</div>
 		</div>
 	</section>

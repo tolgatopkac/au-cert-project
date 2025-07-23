@@ -34,8 +34,8 @@
 	const myAccountItems = [
 		{ href: '/create', label: 'List Property', icon: Plus },
 		{ href: '/my-properties', label: 'My Properties', icon: Building },
-		{ href: '/my-reviews', label: 'My Reviews', icon: Star },
-		{ href: '/activity', label: 'Activity', icon: Activity }
+	/* 	{ href: '/my-reviews', label: 'My Reviews', icon: Star },
+		{ href: '/activity', label: 'Activity', icon: Activity } */
 	];
 
 	let navItems = $state(guestNavItems);
@@ -103,8 +103,8 @@
 
 						<!-- Dropdown Menu -->
 						{#if myAccountDropdownOpen}
-							<div
-								class="absolute top-full right-0 mt-1 w-56 rounded-xl border border-slate-200 bg-white py-2 shadow-lg"
+							<button
+								class="absolute top-8 right-0 mt-1 w-56 rounded-xl border border-slate-200 bg-white py-2 shadow-lg"
 								onmouseenter={() => (myAccountDropdownOpen = true)}
 								onmouseleave={() => (myAccountDropdownOpen = false)}
 							>
@@ -117,7 +117,7 @@
 										<span class="font-medium">{item.label}</span>
 									</a>
 								{/each}
-							</div>
+							</button>
 						{/if}
 					</div>
 				{/if}

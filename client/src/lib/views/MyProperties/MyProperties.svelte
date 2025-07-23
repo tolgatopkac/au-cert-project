@@ -26,36 +26,16 @@
 	import EmptyState from './EmptyState.svelte';
 	import { goto } from '$app/navigation';
 	import type { Property } from '$lib/shared/types';
+	import UpdatePriceModal from './UpdatePriceModal.svelte';
+	import EditPropertyModal from './EditPropertyModal.svelte';
 
 	// Mock recent activities for now
-	let recentActivities = $state([
-		{
-			id: 1,
-			type: 'listed',
-			property: 'Modern Apartment',
-			timestamp: '2 hours ago',
-			icon: Plus
-		},
-		{
-			id: 2,
-			type: 'price_updated',
-			property: 'Beach House',
-			timestamp: '1 day ago',
-			icon: DollarSign
-		},
-		{
-			id: 3,
-			type: 'review_received',
-			property: 'City Loft',
-			timestamp: '3 days ago',
-			icon: Star
-		}
-	]);
+
 
 	// Filtered properties based on active tab
 	let filteredProperties = $derived(() => {
 		const allProps = userStats.properties;
-		
+
 		switch (myPropertiesPageState.activeTab) {
 			case 'all':
 				return allProps;
@@ -84,14 +64,27 @@
 		};
 	});
 
-
 	$effect(() => {
 		console.log('🔄 filteredProperties:', filteredProperties());
 	});
 
-	function handleEditProperty(propertyId: string) {
-		goto(`/property/${propertyId}/edit`);
+	// ✅ Edit handler
+	function handleEditProperty(property: Property) {
+		console.log('Opening edit modal for:', property.title);
+		modalState.editModal.selectedProperty = property;
+		modalState.editModal.isOpen = true;
 	}
+
+	function handleEditModalClose() {
+		modalState.editModal.isOpen = false;
+		modalState.editModal.selectedProperty = null;
+	}
+
+	function handleEditSuccess() {
+		console.log('✅ Property updated successfully, refreshing...');
+		loadMyProperties();
+	}
+
 
 	function handleViewProperty(propertyId: string) {
 		goto(`/property/${propertyId}`);
@@ -101,11 +94,30 @@
 		goto(`/property/${propertyId}/reviews`);
 	}
 
-	async function handleUpdatePrice(propertyId: string) {
-		// This would open a modal or navigate to price update page
-		goto(`/property/${propertyId}/update-price`);
+	/* PRICE!! */
+
+	// Modal state
+	const modalState = $state({
+		priceModal: { isOpen: false, selectedProperty: null as Property | null },
+		editModal: { isOpen: false, selectedProperty: null as Property | null }
+	});
+
+	// ✅ Update handleUpdatePrice
+	function handleUpdatePrice(property: Property) {
+		console.log('Opening price update modal for:', property.title);
+		modalState.priceModal.selectedProperty = property;
+		modalState.priceModal.isOpen = true;
 	}
 
+	function handleModalClose() {
+		modalState.priceModal.isOpen = false;
+		modalState.priceModal.selectedProperty = null;
+	}
+
+	function handlePriceUpdateSuccess() {
+		console.log('✅ Price updated successfully, refreshing data...');
+		loadMyProperties(); // Refresh properties
+	}
 </script>
 
 <svelte:head>
@@ -138,7 +150,7 @@
 				<!-- Properties Grid/List -->
 				{#if myPropertiesPageState.viewMode === 'grid'}
 					<div class="grid grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-3">
-							{#each filteredProperties() as property}
+						{#each filteredProperties() as property}
 							<div
 								class="group overflow-hidden rounded-2xl bg-white shadow-lg transition-all duration-300 hover:shadow-xl"
 							>
@@ -197,7 +209,7 @@
 									<!-- Action Buttons -->
 									<div class="grid grid-cols-2 gap-2">
 										<button
-											onclick={() => handleEditProperty(property.id)}
+											onclick={() => handleEditProperty(property)}
 											class="flex items-center justify-center space-x-1 rounded-lg bg-slate-100 px-3 py-2 text-sm text-slate-700 transition-colors hover:bg-slate-200"
 										>
 											<Edit class="h-4 w-4" />
@@ -214,19 +226,19 @@
 
 									<div class="mt-2 grid grid-cols-2 gap-2">
 										<button
-											onclick={() => handleUpdatePrice(property.id)}
+											onclick={() => handleUpdatePrice(property)}
 											class="flex items-center justify-center space-x-1 rounded-lg bg-blue-100 px-3 py-2 text-sm text-blue-700 transition-colors hover:bg-blue-200"
 										>
 											<DollarSign class="h-4 w-4" />
 											<span>Price</span>
 										</button>
-										<button
+									<!-- 	<button
 											onclick={() => handleViewReviews(property.id)}
 											class="flex items-center justify-center space-x-1 rounded-lg bg-yellow-100 px-3 py-2 text-sm text-yellow-700 transition-colors hover:bg-yellow-200"
 										>
 											<Star class="h-4 w-4" />
 											<span>Reviews</span>
-										</button>
+										</button> -->
 									</div>
 								</div>
 							</div>
@@ -286,26 +298,26 @@
 														<Eye class="h-4 w-4" />
 													</button>
 													<button
-														onclick={() => handleEditProperty(property.id)}
+														onclick={() => handleEditProperty(property)}
 														class="p-2 text-slate-400 transition-colors hover:text-blue-600"
 														title="Edit Property"
 													>
 														<Edit class="h-4 w-4" />
 													</button>
 													<button
-														onclick={() => handleUpdatePrice(property.id)}
+														onclick={() => handleUpdatePrice(property)}
 														class="p-2 text-slate-400 transition-colors hover:text-purple-600"
 														title="Update Price"
 													>
 														<DollarSign class="h-4 w-4" />
 													</button>
-													<button
+												<!-- 	<button
 														onclick={() => handleViewReviews(property.id)}
 														class="p-2 text-slate-400 transition-colors hover:text-yellow-600"
 														title="View Reviews"
 													>
 														<Star class="h-4 w-4" />
-													</button>
+													</button> -->
 												</div>
 											</td>
 										</tr>
@@ -345,3 +357,17 @@
 		{/if}
 	</div>
 </main>
+
+<UpdatePriceModal
+	bind:isOpen={modalState.priceModal.isOpen}
+	bind:property={modalState.priceModal.selectedProperty}
+	onClose={handleModalClose}
+	onSuccess={handlePriceUpdateSuccess}
+/>
+
+<EditPropertyModal
+	bind:isOpen={modalState.editModal.isOpen}
+	bind:property={modalState.editModal.selectedProperty}
+	onClose={handleEditModalClose}
+	onSuccess={handleEditSuccess}
+/>

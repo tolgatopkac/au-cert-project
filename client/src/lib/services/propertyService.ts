@@ -377,9 +377,9 @@ export class PropertyService {
 				throw new Error('Please switch to Sepolia network');
 			}
 
-			if (!newPrice?.trim() || parseFloat(newPrice) <= 0) {
+			/* if (!newPrice?.trim() || parseFloat(newPrice) <= 0) {
 				throw new Error('Valid price is required');
-			}
+			} */
 
 			console.log('💰 Updating price:', { propertyId, newPrice });
 
