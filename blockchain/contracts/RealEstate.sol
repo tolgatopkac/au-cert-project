@@ -170,7 +170,7 @@ contract MyContract {
         Property[] memory items = new Property[](itemCount);
 
         for (uint256 i = 0; i < itemCount; i++) {
-            Property storage currentItem = properties[i]; // ← i+1 değil, i
+            Property storage currentItem = properties[i]; 
             items[currentIndex] = currentItem;
             currentIndex += 1;
         }
@@ -215,7 +215,7 @@ contract MyContract {
         Property[] memory tempArray = new Property[](totalItemCount);
         uint256 userPropertyCount = 0;
 
-        // Tek loop'ta hem say hem de ekle
+
         for (uint256 i = 0; i < totalItemCount; i++) {
             if (properties[i].owner == user) {
                 tempArray[userPropertyCount] = properties[i];
@@ -223,7 +223,7 @@ contract MyContract {
             }
         }
 
-        // Doğru boyutta yeni array oluştur
+     
         Property[] memory userProperties = new Property[](userPropertyCount);
         for (uint256 i = 0; i < userPropertyCount; i++) {
             userProperties[i] = tempArray[i];
@@ -263,7 +263,7 @@ contract MyContract {
         return reviews[productId];
     }
 
-    /* 01:13:31 */
+
     function getUserReviews(
         address user
     ) external view returns (Review[] memory) {
@@ -271,7 +271,7 @@ contract MyContract {
         Review[] memory userProductReviews = new Review[](totalReviews);
         uint256 currentIndex = 0;
 
-        // Tüm property'leri tara
+     
         for (uint256 productId = 0; productId < propertyIndex; productId++) {
             Review[] memory productReviews = reviews[productId];
 
@@ -323,7 +323,7 @@ contract MyContract {
         return highestRatedProductId;
     }
 
-    // Get total reviews count
+    
     function getTotalReviews() external view returns (uint256) {
         return reviewsCounter;
     }
