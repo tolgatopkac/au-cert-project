@@ -11,6 +11,5 @@
 
 
 </script>
-
 <Header />
 {@render children()}

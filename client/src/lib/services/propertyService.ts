@@ -1,10 +1,34 @@
 import { ethers } from 'ethers';
+import {
+	propertyState,
+	createPropertyState,
+	userPropertiesState,
+	userReviewsState
+} from '../stores/propertyStore.svelte.js';
 import { walletState } from '../stores/walletStore.svelte.js';
-import { CONTRACT_ADDRESS, CONTRACT_ABI } from '../utils/constants.js';
 import { WalletService } from './walletService.js';
-import { createPropertyState, propertyState } from '$lib/stores/propertyStore.svelte.js';
+import { CONTRACT_ADDRESS, CONTRACT_ABI } from '../utils/constants.js';
 
 export class PropertyService {
+	// Check if we can actually use the provider
+	private static async checkProviderAccess(): Promise<boolean> {
+		try {
+			if (typeof window.ethereum === 'undefined') {
+				return false;
+			}
+
+			// Try to get accounts without requesting permission
+			const accounts = await window.ethereum.request({
+				method: 'eth_accounts' // This doesn't prompt, just returns current accounts
+			});
+
+			return accounts && accounts.length > 0;
+		} catch (error) {
+			console.warn('Provider access check failed:', error);
+			return false;
+		}
+	}
+
 	// === GET ALL PROPERTIES ===
 	static async getAllProperties() {
 		try {
@@ -13,18 +37,26 @@ export class PropertyService {
 
 			console.log('📊 Fetching all properties...');
 
-			// Contract instance
+			// Check if we have proper access to blockchain
+			const hasProviderAccess = await this.checkProviderAccess();
+
+			if (!hasProviderAccess) {
+				console.warn('⚠️ No blockchain access, using demo data');
+				const mockProperties = this.getMockProperties();
+				propertyState.items = mockProperties;
+				propertyState.error = 'Connect your wallet to view real properties';
+				propertyState.lastFetch = Date.now();
+				return mockProperties;
+			}
+
+			// Now we know we have access, create contract
 			let contract;
 			if (walletState.isConnected) {
 				const signer = await WalletService.getSigner();
 				contract = new ethers.Contract(CONTRACT_ADDRESS, CONTRACT_ABI, signer);
 			} else {
-				if (typeof window.ethereum !== 'undefined') {
-					const provider = new ethers.BrowserProvider(window.ethereum);
-					contract = new ethers.Contract(CONTRACT_ADDRESS, CONTRACT_ABI, provider);
-				} else {
-					throw new Error('No provider available');
-				}
+				const provider = new ethers.BrowserProvider(window.ethereum);
+				contract = new ethers.Contract(CONTRACT_ADDRESS, CONTRACT_ABI, provider);
 			}
 
 			const result = await contract.getAllProperties();
@@ -32,16 +64,16 @@ export class PropertyService {
 
 			// Parse properties with correct field names
 			const parsedProperties = result.map((property, index) => ({
-				owner: property[1] || property.owner || '', // address owner
-				title: property[3] || property.propertyTitle || 'Untitled Property', // string propertyTitle
-				description: property[7] || property.description || '', // string description
-				category: property[4] || property.category || 'General', // string category
-				price: property[2] ? ethers.formatEther(property[2]) : '0', // uint256 price
-				productId: property[0] ? Number(property[0]) : index, // uint256 productId
-				reviewers: property[8] || property.reviewers || [], // address[] reviewers
-				reviews: property[9] || property.reviews || [], // string[] reviews
-				image: property[5] || property.images || '', // string images
-				address: property[6] || property.propertyAddress || '', // string propertyAddress
+				owner: property[1] || property.owner || '',
+				title: property[3] || property.propertyTitle || 'Untitled Property',
+				description: property[7] || property.description || '',
+				category: property[4] || property.category || 'General',
+				price: property[2] ? ethers.formatEther(property[2]) : '0',
+				productId: property[0] ? Number(property[0]) : index,
+				reviewers: property[8] || property.reviewers || [],
+				reviews: property[9] || property.reviews || [],
+				image: property[5] || property.images || '',
+				address: property[6] || property.propertyAddress || '',
 				id: property[0]?.toString() || index.toString(),
 				shortOwner: property[1]
 					? `${property[1].slice(0, 6)}...${property[1].slice(-4)}`
@@ -54,9 +86,22 @@ export class PropertyService {
 			console.log(`✅ Fetched ${parsedProperties.length} formatted properties:`, parsedProperties);
 			return parsedProperties;
 		} catch (error) {
-			propertyState.error = error instanceof Error ? error.message : 'Failed to fetch properties';
-			console.error('❌ Failed to fetch properties:', error);
-			throw error;
+			console.error('❌ getAllProperties error:', error);
+
+			// Fallback to mock data on any error
+			const mockProperties = this.getMockProperties();
+			propertyState.items = mockProperties;
+
+			// Set appropriate error message based on error type
+			if (error.message?.includes('could not decode result data')) {
+				propertyState.error = 'Unable to connect to blockchain. Please connect your wallet.';
+			} else if (error.message?.includes('MetaMask') || error.message?.includes('ethereum')) {
+				propertyState.error = 'MetaMask connection required - showing demo data';
+			} else {
+				propertyState.error = 'Failed to fetch properties - showing demo data';
+			}
+
+			return mockProperties;
 		} finally {
 			propertyState.loading = false;
 		}
@@ -1337,35 +1382,78 @@ export class PropertyService {
 	// === GET TOTAL REVIEWS COUNT ===
 	static async getTotalReviews() {
 		try {
-			console.log('📊 Fetching total reviews count...');
+			const hasProviderAccess = await this.checkProviderAccess();
 
-			// Get contract (read-only or with signer)
+			if (!hasProviderAccess) {
+				return { totalReviews: 0 };
+			}
+
 			let contract;
 			if (walletState.isConnected) {
 				const signer = await WalletService.getSigner();
 				contract = new ethers.Contract(CONTRACT_ADDRESS, CONTRACT_ABI, signer);
 			} else {
-				if (typeof window.ethereum !== 'undefined') {
-					const provider = new ethers.BrowserProvider(window.ethereum);
-					contract = new ethers.Contract(CONTRACT_ADDRESS, CONTRACT_ABI, provider);
-				} else {
-					throw new Error('No provider available');
-				}
+				const provider = new ethers.BrowserProvider(window.ethereum);
+				contract = new ethers.Contract(CONTRACT_ADDRESS, CONTRACT_ABI, provider);
 			}
 
 			const totalReviews = await contract.getTotalReviews();
-			const count = Number(totalReviews);
-
-			console.log('✅ Total reviews count:', count);
-
-			return {
-				totalReviews: count,
-				success: true
-			};
+			return { totalReviews: Number(totalReviews) };
 		} catch (error) {
 			console.error('❌ Failed to fetch total reviews count:', error);
-			throw error;
+			return { totalReviews: 0 };
 		}
+	}
+
+	// Enhanced mock data for better demo experience
+	private static getMockProperties() {
+		return [
+			{
+				productId: 1,
+				owner: '0x1234567890123456789012345678901234567890',
+				shortOwner: '0x1234...7890',
+				title: 'Modern Downtown Apartment',
+				description:
+					'Beautiful 2-bedroom apartment with city view and modern amenities. Perfect for young professionals.',
+				category: 'Apartment',
+				price: '0.5',
+				image: 'https://images.unsplash.com/photo-1560448204-e02f11c3d0e2?w=400&q=80',
+				address: '123 Main Street, Downtown',
+				reviewers: [],
+				reviews: [],
+				id: '1'
+			},
+			{
+				productId: 2,
+				owner: '0xabcdefabcdefabcdefabcdefabcdefabcdefabcd',
+				shortOwner: '0xabcd...abcd',
+				title: 'Luxury Villa with Pool',
+				description:
+					'Spacious 4-bedroom villa with private pool, garden, and panoramic mountain views.',
+				category: 'House',
+				price: '2.1',
+				image: 'https://images.unsplash.com/photo-1564013799919-ab600027ffc6?w=400&q=80',
+				address: '456 Oak Avenue, Hillside',
+				reviewers: [],
+				reviews: [],
+				id: '2'
+			},
+			{
+				productId: 3,
+				owner: '0xfedcbafedcbafedcbafedcbafedcbafedcbafed',
+				shortOwner: '0xfedc...afed',
+				title: 'Cozy Studio Loft',
+				description:
+					'Minimalist studio loft in artistic quarter. High ceilings, exposed brick, great natural light.',
+				category: 'Studio',
+				price: '0.25',
+				image: 'https://images.unsplash.com/photo-1502672260266-1c1ef2d93688?w=400&q=80',
+				address: '789 Art District, Creative Quarter',
+				reviewers: [],
+				reviews: [],
+				id: '3'
+			}
+		];
 	}
 }
 

@@ -26,6 +26,7 @@
 	import { homePageState } from './HomeState.svelte';
 	import { formatEthDisplay } from '$lib/utils/formatters';
 	import { walletState } from '$lib/web3.svelte';
+	import BlockchainStatus from '$lib/components/BlockchainStatus.svelte';
 
 	const {
 		handleConnectWallet
@@ -34,8 +35,9 @@
 	} = $props();
 </script>
 
-<main class="min-h-screen bg-gradient-to-br from-slate-50 to-emerald-50">
-	<!-- 1. HERO SECTION -->
+<div class="min-h-screen bg-gradient-to-br from-emerald-50 via-teal-50 to-cyan-50">
+	<BlockchainStatus />
+
 	<section
 		class="relative overflow-hidden bg-gradient-to-br from-emerald-900 via-emerald-800 to-teal-900"
 	>
@@ -132,16 +134,16 @@
 
 				<!-- Recent Activities -->
 				<!-- 		<div class="text-center">
-					<div
-						class="mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-2xl bg-gradient-to-br from-emerald-500 to-teal-600"
-					>
-						<TrendingUp class="h-8 w-8 text-white" />
-					</div>
-					<div class="mb-2 text-3xl font-bold text-slate-800">
-						{homePageState.recentActivities.length}
-					</div>
-					<div class="text-slate-600">Recent Activities</div>
-				</div> -->
+						<div
+							class="mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-2xl bg-gradient-to-br from-emerald-500 to-teal-600"
+						>
+							<TrendingUp class="h-8 w-8 text-white" />
+						</div>
+						<div class="mb-2 text-3xl font-bold text-slate-800">
+							{homePageState.recentActivities.length}
+						</div>
+						<div class="text-slate-600">Recent Activities</div>
+					</div> -->
 			</div>
 		</div>
 	</section>
@@ -439,4 +441,4 @@
 			</div>
 		</div>
 	</section>
-</main>
+</div>

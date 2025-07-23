@@ -1,6 +1,7 @@
 <script lang="ts">
 	import { PropertyService } from '$lib/services/propertyService';
 	import Home from '$lib/views/Home/Home.svelte';
+	import MetaMaskWarning from '$lib/components/MetaMaskWarning.svelte';
 	import { homePageStateLoad } from '$lib/views/Home/HomeState.svelte';
 	import { walletState, connectWallet } from '$lib/web3.svelte.js';
 
@@ -11,8 +12,11 @@
 
 	$effect(() => {
 		console.log('🚀 Loading data...');
-		console.log('👛 Wallet connected:', walletState);
-		homePageStateLoad();
+		
+		// Safe data loading with error handling
+		homePageStateLoad().catch((error) => {
+			console.error('Failed to load homepage data:', error);
+		});
 
 		// Wallet connection durumu değişirse yeniden yükle
 		if (walletState.isConnected) {
@@ -27,22 +31,43 @@
 	async function addSepoliaNetwork() {
 		if (typeof window !== 'undefined' && window.ethereum) {
 			try {
+				// First try to switch to Sepolia (if it already exists)
 				await window.ethereum.request({
-					method: 'wallet_addEthereumChain',
-					params: [{
-						chainId: '0xAA36A7', // 11155111 in hex
-						chainName: 'Sepolia Test Network',
-						nativeCurrency: {
-							name: 'SepoliaETH',
-							symbol: 'ETH',
-							decimals: 18
-						},
-						rpcUrls: ['https://sepolia.infura.io/v3/'],
-						blockExplorerUrls: ['https://sepolia.etherscan.io/']
-					}]
+					method: 'wallet_switchEthereumChain',
+					params: [{ chainId: '0xAA36A7' }] // 11155111 in hex
 				});
-			} catch (error) {
-				console.error('Failed to add Sepolia network:', error);
+				
+				console.log('✅ Switched to Sepolia network');
+				
+			} catch (switchError: any) {
+				// If network doesn't exist (error code 4902), then add it
+				if (switchError.code === 4902) {
+					try {
+						await window.ethereum.request({
+							method: 'wallet_addEthereumChain',
+							params: [{
+								chainId: '0xAA36A7',
+								chainName: 'Sepolia Test Network',
+								nativeCurrency: {
+									name: 'Ethereum',
+									symbol: 'ETH',
+									decimals: 18
+								},
+								rpcUrls: ['https://sepolia.infura.io/v3/'],
+								blockExplorerUrls: ['https://sepolia.etherscan.io/']
+							}]
+						});
+						
+						console.log('✅ Added and switched to Sepolia network');
+						
+					} catch (addError) {
+						console.error('❌ Failed to add Sepolia network:', addError);
+						alert('Failed to add Sepolia network. Please add it manually.');
+					}
+				} else {
+					console.error('❌ Failed to switch to Sepolia:', switchError);
+					alert('Failed to switch to Sepolia network.');
+				}
 			}
 		} else {
 			alert('MetaMask is not installed. Please install MetaMask first!');
@@ -72,14 +97,16 @@
 </script>
 
 <svelte:head>
-	<title>PropChain - Decentralized Real Estate Platform</title>
-	<meta
-		name="description"
-		content="Buy, sell and review real estate properties on the blockchain. Secure, transparent, and decentralized."
-	/>
+	<title>PropChain - Decentralized Real Estate Marketplace</title>
+	<meta name="description" content="Buy, sell, and review properties on the blockchain with PropChain - the future of real estate." />
 </svelte:head>
 
-<Home {handleConnectWallet} />
+<MetaMaskWarning />
+
+<div class="{helpWidgetOpen ? 'pb-96' : ''}">
+	<Home />
+</div>
+
 <div class="fixed bottom-6 right-6 z-40">
 	<div class="relative">
 		<!-- Floating Button -->

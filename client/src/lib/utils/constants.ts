@@ -39,3 +39,6 @@ export const SUPPORTED_NETWORKS = [NETWORKS.SEPOLIA];
 	SUCCESS: 'Property listed successfully!'
 };
  */
+
+// Export the detection utility
+export { checkMetaMask, getMetaMaskInstallUrl } from './metamask.js';
